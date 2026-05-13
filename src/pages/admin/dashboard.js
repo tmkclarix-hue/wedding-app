@@ -1,95 +1,156 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { db } from '../../lib/firebase';
-import { collection, getDocs, orderBy, query, updateDoc, doc } from 'firebase/firestore';
+import { collection, query, updateDoc, doc, onSnapshot, orderBy } from 'firebase/firestore';
+import { LanguageContext } from '../_app';
 
 export default function AdminDashboard() {
-  const [bookings, setBookings] = useState([]);
+  const { t } = useContext(LanguageContext);
+  const [vendors, setVendors] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Database එකෙන් bookings ටික අරගන්නවා
-  const fetchBookings = async () => {
-    try {
-      const q = query(collection(db, "bookings"), orderBy("bookedAt", "desc"));
-      const querySnapshot = await getDocs(q);
-      const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setBookings(data);
-    } catch (error) {
-      console.error("Error fetching bookings:", error);
-    } finally {
+  useEffect(() => {
+    // දත්ත Real-time ලබාගැනීම
+    const q = query(
+      collection(db, "pending_vendors"), 
+      orderBy("createdAt", "desc")
+    );
+    
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const data = querySnapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data() 
+      }));
+      setVendors(data);
       setLoading(false);
+    }, (error) => {
+      console.error("Error fetching vendors:", error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Status එක 'approved' කිරීම
+  const approveVendor = async (id) => {
+    if(!window.confirm("මෙම ව්‍යාපාරය Approve කිරීමට ඔබට විශ්වාසද?")) return;
+    try {
+      const docRef = doc(db, "pending_vendors", id);
+      await updateDoc(docRef, { status: 'approved' });
+      alert("Vendor Approved Successfully!");
+    } catch (error) {
+      alert("Error: " + error.message);
+    }
+  }
+
+  // Top Vendor Toggle Logic
+  const toggleTopVendor = async (id, currentStatus) => {
+    try {
+      const docRef = doc(db, "pending_vendors", id);
+      await updateDoc(docRef, { isTop: !currentStatus });
+    } catch (error) {
+      alert("Error: " + error.message);
     }
   };
 
-  useEffect(() => {
-    fetchBookings();
-  }, []);
-
-  // Booking එකක status එක (Pending/Confirmed) වෙනස් කරන්න
-  const updateStatus = async (id, newStatus) => {
-    const docRef = doc(db, "bookings", id);
-    await updateDoc(docRef, { status: newStatus });
-    fetchBookings(); // Table එක refresh කරනවා
-  };
-
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-4 md:p-10 font-sans">
+    <div className="min-h-screen bg-slate-950 text-white p-6 md:p-12 font-sans selection:bg-rose-500">
       <div className="max-w-7xl mx-auto">
-        <header className="flex justify-between items-center mb-10">
+        
+        {/* Header */}
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 gap-6">
           <div>
-            <h1 className="text-3xl font-black tracking-tight text-rose-500">ADMIN PANEL</h1>
-            <p className="text-gray-400 text-sm">Manage your wedding bookings and invoices</p>
+            <h1 className="text-5xl font-serif italic text-white mb-2 leading-none">
+              Control <span className="text-rose-500">Center</span>
+            </h1>
+            <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.5em]">
+              Directory Management & Verification
+            </p>
           </div>
-          <div className="bg-rose-500/10 border border-rose-500/20 px-4 py-2 rounded-full">
-            <span className="text-rose-500 font-bold">{bookings.length} Total Bookings</span>
+          <div className="flex gap-4">
+            <div className="bg-white/5 border border-white/10 px-8 py-4 rounded-[2rem] text-center">
+              <span className="block text-2xl font-black text-rose-500 leading-none">{vendors.length}</span>
+              <span className="text-[9px] text-gray-500 uppercase tracking-widest font-bold">Total Vendors</span>
+            </div>
           </div>
         </header>
 
         {loading ? (
-          <div className="text-center py-20">Loading Dashboard...</div>
+          <div className="flex flex-col justify-center items-center py-40">
+            <div className="w-12 h-12 border-2 border-rose-500/20 border-t-rose-500 rounded-full animate-spin"></div>
+            <p className="mt-4 text-[10px] font-black uppercase tracking-widest text-gray-600">Accessing Database</p>
+          </div>
         ) : (
-          <div className="overflow-x-auto bg-slate-900/50 backdrop-blur-xl border border-white/5 rounded-[2rem] shadow-2xl">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-white/10">
-                  <th className="p-6 text-xs uppercase tracking-widest text-gray-500">Service & Category</th>
-                  <th className="p-6 text-xs uppercase tracking-widest text-gray-500">Location</th>
-                  <th className="p-6 text-xs uppercase tracking-widest text-gray-500">Price (LKR)</th>
-                  <th className="p-6 text-xs uppercase tracking-widest text-gray-500">Status</th>
-                  <th className="p-6 text-xs uppercase tracking-widest text-gray-500 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {bookings.map((booking) => (
-                  <tr key={booking.id} className="hover:bg-white/[0.02] transition-colors">
-                    <td className="p-6">
-                      <div className="font-bold text-white">{booking.serviceName}</div>
-                      <div className="text-xs text-rose-400 font-medium">{booking.category}</div>
-                    </td>
-                    <td className="p-6 text-gray-400">{booking.customerLocation}</td>
-                    <td className="p-6 font-mono text-emerald-400">
-                      {booking.totalPaid?.toLocaleString()}
-                    </td>
-                    <td className="p-6">
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${
-                        booking.status === 'Confirmed' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-amber-500/20 text-amber-500'
-                      }`}>
-                        {booking.status}
-                      </span>
-                    </td>
-                    <td className="p-6 text-right">
-                      {booking.status !== 'Confirmed' && (
-                        <button 
-                          onClick={() => updateStatus(booking.id, 'Confirmed')}
-                          className="bg-white text-black text-[10px] font-bold px-4 py-2 rounded-lg hover:bg-rose-500 hover:text-white transition-all"
-                        >
-                          Confirm
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {vendors.length === 0 ? (
+              <div className="col-span-full py-40 text-center opacity-20">
+                <span className="text-6xl block mb-4">📂</span>
+                <p className="uppercase tracking-[1em] text-xs font-black">No Records Found</p>
+              </div>
+            ) : (
+              vendors.map((vendor) => (
+                <div key={vendor.id} className={`relative group bg-white/[0.02] border ${vendor.isTop ? 'border-amber-500/30' : 'border-white/5'} p-8 rounded-[3rem] transition-all duration-500 hover:bg-white/[0.04]`}>
+                  
+                  {/* Status Badges */}
+                  <div className="flex justify-between items-start mb-6">
+                    <div className="flex flex-col gap-2">
+                        <span className="text-[9px] font-black px-4 py-1.5 bg-rose-600 rounded-full uppercase tracking-widest w-fit">
+                            {vendor.category}
+                        </span>
+                        <span className={`text-[9px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest w-fit border ${vendor.status === 'approved' ? 'border-emerald-500 text-emerald-500 bg-emerald-500/10' : 'border-amber-500 text-amber-500 bg-amber-400/10'}`}>
+                            {vendor.status}
+                        </span>
+                    </div>
+                    {vendor.isTop && (
+                        <div className="bg-amber-500 p-2 rounded-full shadow-lg shadow-amber-500/20">
+                            <span className="text-xs">⭐</span>
+                        </div>
+                    )}
+                  </div>
+
+                  <h3 className="text-2xl font-serif italic text-white mb-2">{vendor.businessName}</h3>
+                  <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-6 italic">📍 {vendor.district}</p>
+
+                  <div className="space-y-3 mb-10">
+                    <div className="flex justify-between items-center text-xs p-3 bg-black/30 rounded-2xl border border-white/5">
+                        <span className="text-gray-500 font-bold uppercase tracking-tighter">Contact</span>
+                        <span className="text-emerald-400 font-mono font-bold tracking-widest">{vendor.phone}</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3">
+                    {/* Approve Button */}
+                    {vendor.status !== 'approved' ? (
+                      <button 
+                        onClick={() => approveVendor(vendor.id)}
+                        className="w-full py-4 bg-white text-black rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-emerald-500 hover:text-white transition-all shadow-xl"
+                      >
+                        Approve Profile
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => toggleTopVendor(vendor.id, vendor.isTop)}
+                        className={`w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all border ${
+                          vendor.isTop 
+                          ? 'bg-amber-500/10 border-amber-500/50 text-amber-500 hover:bg-amber-500 hover:text-black' 
+                          : 'border-white/10 text-gray-500 hover:border-amber-500 hover:text-amber-500'
+                        }`}
+                      >
+                        {vendor.isTop ? 'Remove from Top' : 'Promote to Top'}
+                      </button>
+                    )}
+                    
+                    {/* External Link to Portfolio */}
+                    <a 
+                      href={`/vendor/${vendor.id}`} 
+                      target="_blank" 
+                      className="text-center text-[9px] text-gray-600 font-black uppercase tracking-[0.3em] mt-2 hover:text-white transition-colors"
+                    >
+                      View Live Portfolio ↗
+                    </a>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         )}
       </div>

@@ -1,5 +1,8 @@
-// Next.js API route support: https://nextjs.org/docs/api-routes/introduction
-
 export default function handler(req, res) {
-  res.status(200).json({ name: "John Doe" });
+  // සරලවම API එක වැඩ කරනවාද කියලා බලන්න status එකක් යවමු
+  res.status(200).json({ 
+    status: "Online",
+    message: "Wedding Directory API is active",
+    timestamp: new Date().toISOString()
+  });
 }
