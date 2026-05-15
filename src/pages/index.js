@@ -4,19 +4,18 @@ import { collection, query, where, onSnapshot, limit } from 'firebase/firestore'
 import Link from 'next/link';
 import { LanguageContext } from './_app';
 
-// --- Dynamic Category Card Component (Top List 3-Vendor Loop) ---
+// --- Dynamic Category Card Component ---
 const CategoryCard = ({ cat }) => {
   const [mediaList, setMediaList] = useState({ images: [], videos: [] });
   const [imgIndex, setImgIndex] = useState(0);
   const [vidIndex, setVidIndex] = useState(0);
 
   useEffect(() => {
-    // Admin Panel එකේ Star Mark (isTopList: true) කරපු Vendors ලා 3 දෙනෙක් ගන්නවා
     const q = query(
       collection(db, "pending_vendors"),
       where("status", "==", "approved"),
       where("category", "==", cat.name),
-      where("isTopList", "==", true), // Admin panel එකේ star mark එක
+      where("isTopList", "==", true),
       limit(3) 
     );
 
@@ -33,7 +32,6 @@ const CategoryCard = ({ cat }) => {
     return () => unsub();
   }, [cat.name]);
 
-  // Image Auto-Slider (Every 3 seconds)
   useEffect(() => {
     if (mediaList.images.length > 0) {
       const interval = setInterval(() => {
@@ -43,7 +41,6 @@ const CategoryCard = ({ cat }) => {
     }
   }, [mediaList.images]);
 
-  // Video End Logic
   const handleVideoEnd = () => {
     if (mediaList.videos.length > 0) {
       setVidIndex((prev) => (prev + 1) % mediaList.videos.length);
@@ -52,9 +49,9 @@ const CategoryCard = ({ cat }) => {
 
   return (
     <Link href={`/category/${cat.name.toLowerCase()}`}>
-      <div className="relative h-[550px] group cursor-pointer overflow-hidden rounded-[3.5rem] border border-white/10 transition-all duration-1000 hover:border-rose-500 shadow-3xl bg-slate-900">
+      {/* h-[400px] md:h-[550px] - පෝන් එකේදී උස අඩු කළා */}
+      <div className="relative h-[400px] md:h-[550px] group cursor-pointer overflow-hidden rounded-[2.5rem] md:rounded-[3.5rem] border border-white/10 transition-all duration-1000 hover:border-rose-500 shadow-3xl bg-slate-900">
         
-        {/* Background Images Loop */}
         <div className="absolute inset-0 w-full h-full">
           {mediaList.images.length > 0 ? (
             mediaList.images.map((img, i) => (
@@ -70,7 +67,6 @@ const CategoryCard = ({ cat }) => {
           )}
         </div>
 
-        {/* Video Overlay Loop */}
         {mediaList.videos.length > 0 && (
           <video 
             key={mediaList.videos[vidIndex]}
@@ -81,23 +77,22 @@ const CategoryCard = ({ cat }) => {
           </video>
         )}
 
-        {/* Luxury Aesthetics */}
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
         
-        <div className="absolute inset-0 p-12 flex flex-col justify-end items-center text-center">
-           {/* Visual Indicators for 3 vendors */}
-           <div className="mb-6 flex gap-2">
+        <div className="absolute inset-0 p-8 md:p-12 flex flex-col justify-end items-center text-center">
+           <div className="mb-4 md:mb-6 flex gap-2">
              {[...Array(3)].map((_, i) => (
-               <span key={i} className={`h-1 rounded-full transition-all duration-700 ${Math.floor(imgIndex/10) === i ? 'bg-rose-500 w-12' : 'bg-white/20 w-6'}`}></span>
+               <span key={i} className={`h-1 rounded-full transition-all duration-700 ${Math.floor(imgIndex/10) === i ? 'bg-rose-500 w-10 md:w-12' : 'bg-white/20 w-4 md:w-6'}`}></span>
              ))}
            </div>
-            
-           <h3 className="text-white font-black uppercase tracking-tighter text-6xl md:text-7xl mb-4 transform group-hover:-translate-y-2 transition-transform duration-500 drop-shadow-2xl">
+           
+           {/* text-4xl md:text-7xl - අකුරු Responsive කළා */}
+           <h3 className="text-white font-black uppercase tracking-tighter text-4xl md:text-7xl mb-4 transform group-hover:-translate-y-2 transition-transform duration-500 drop-shadow-2xl">
             {cat.name}
            </h3>
            
-           <p className="text-rose-500 font-bold text-[10px] tracking-[0.5em] uppercase opacity-0 group-hover:opacity-100 transition-all duration-500">
-              Explore Collection
+           <p className="text-rose-500 font-bold text-[8px] md:text-[10px] tracking-[0.4em] md:tracking-[0.5em] uppercase opacity-100 md:opacity-0 group-hover:opacity-100 transition-all duration-500">
+             Explore Collection
            </p>
         </div>
       </div>
@@ -111,7 +106,6 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDistrict, setSelectedDistrict] = useState('');
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
-
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const videoList = ["/wedding.mp4", "/v1.mp4"]; 
 
@@ -151,7 +145,7 @@ export default function Home() {
     <div className="relative min-h-screen w-full font-sans bg-slate-950">
       
       {/* --- Video Hero Section --- */}
-      <div className="relative h-[90vh] w-full flex items-center justify-center overflow-hidden">
+      <div className="relative h-[80vh] md:h-[90vh] w-full flex items-center justify-center overflow-hidden">
         <img 
           src="https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80" 
           className={`absolute inset-0 h-full w-full object-cover brightness-[0.4] transition-opacity duration-1000 ${isVideoLoaded ? 'opacity-0' : 'opacity-100'}`} 
@@ -162,31 +156,41 @@ export default function Home() {
           autoPlay muted playsInline
           onLoadedData={() => setIsVideoLoaded(true)}
           onEnded={handleVideoEnd}
-          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 brightness-[0.5] ${isVideoLoaded ? 'opacity-100' : 'opacity-0'}`}
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 brightness-[0.4] ${isVideoLoaded ? 'opacity-100' : 'opacity-0'}`}
         >
           <source src={videoList[currentVideoIndex]} type="video/mp4" />
         </video>
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-950/60 to-slate-950"></div>
 
-        <div className="relative z-10 text-center px-4 max-w-5xl">
-          <span className="text-rose-500 font-black text-xs tracking-[0.5em] uppercase mb-4 block animate-pulse">Premium Wedding Planner</span>
-          <h1 className="text-6xl md:text-8xl lg:text-9xl font-serif italic text-white mb-8 drop-shadow-2xl tracking-tighter">
+        <div className="relative z-10 text-center px-6 w-full max-w-5xl">
+          <span className="text-rose-500 font-black text-[10px] md:text-xs tracking-[0.4em] md:tracking-[0.5em] uppercase mb-4 block animate-pulse">Premium Wedding Planner</span>
+          <h1 className="text-4xl md:text-8xl lg:text-9xl font-serif italic text-white mb-8 drop-shadow-2xl tracking-tighter leading-tight">
             {t.heroTitle || 'Your Dream Wedding Starts Here'}
           </h1>
-          <div className="flex flex-col md:flex-row gap-0 p-2 bg-white/10 backdrop-blur-md rounded-none md:rounded-full border border-white/20 shadow-2xl overflow-hidden max-w-4xl mx-auto">
-            <input type="text" placeholder="Search services..." className="flex-grow bg-transparent px-8 py-5 text-white outline-none text-sm placeholder:text-gray-400" onChange={(e) => setSearchQuery(e.target.value)} />
-            <select className="bg-transparent px-8 py-5 text-white outline-none text-xs font-bold uppercase tracking-widest cursor-pointer appearance-none" onChange={(e) => setSelectedDistrict(e.target.value)}>
+          
+          {/* Search Box Responsive Layout */}
+          <div className="flex flex-col md:flex-row gap-2 md:gap-0 p-2 bg-white/10 backdrop-blur-md rounded-2xl md:rounded-full border border-white/20 shadow-2xl overflow-hidden max-w-4xl mx-auto">
+            <input 
+                type="text" 
+                placeholder="Search services..." 
+                className="flex-grow bg-white/5 md:bg-transparent px-6 py-4 md:px-8 md:py-5 text-white outline-none text-sm placeholder:text-gray-400 rounded-xl md:rounded-none" 
+                onChange={(e) => setSearchQuery(e.target.value)} 
+            />
+            <select 
+                className="bg-white/5 md:bg-transparent px-6 py-4 md:px-8 md:py-5 text-white outline-none text-[10px] font-bold uppercase tracking-widest cursor-pointer rounded-xl md:rounded-none" 
+                onChange={(e) => setSelectedDistrict(e.target.value)}
+            >
               <option value="" className="bg-slate-900">All Districts</option>
               {districts.map(d => <option key={d} value={d} className="bg-slate-900">{d}</option>)}
             </select>
-            <button className="bg-rose-600 text-white px-12 py-5 rounded-none md:rounded-full text-[10px] font-black uppercase tracking-[0.3em] hover:bg-rose-500 transition-all shadow-xl">Search</button>
+            <button className="bg-rose-600 text-white px-8 py-4 md:px-12 md:py-5 rounded-xl md:rounded-full text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] hover:bg-rose-500 transition-all shadow-xl">Search</button>
           </div>
         </div>
       </div>
 
-      {/* --- Categories Section (Updated: 2 per row + Auto Slider) --- */}
-      <div className="relative z-10 -mt-32 px-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-12 max-w-7xl mx-auto mb-48">
+      {/* --- Categories Section --- */}
+      <div className="relative z-10 -mt-16 md:-mt-32 px-4 md:px-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-12 max-w-7xl mx-auto mb-24 md:mb-48">
           {categories.map((cat) => (
             <CategoryCard key={cat.id} cat={cat} />
           ))}
@@ -197,26 +201,27 @@ export default function Home() {
           const topList = getFilteredVendors(cat.name);
           if (topList.length === 0) return null;
           return (
-            <section key={cat.id} className="max-w-[95%] mx-auto mb-40 px-4">
-              <div className="flex flex-col md:flex-row items-baseline gap-4 mb-16 border-l-4 border-rose-500 pl-6">
-                <h2 className="text-5xl font-serif italic text-white uppercase tracking-tighter">Top {cat.name}</h2>
-                <span className="text-rose-500 font-black text-[10px] tracking-widest uppercase opacity-60">Handpicked Excellence</span>
+            <section key={cat.id} className="max-w-full md:max-w-[95%] mx-auto mb-24 md:mb-40 px-2 md:px-4">
+              <div className="flex flex-col md:flex-row items-start md:items-baseline gap-2 md:gap-4 mb-10 md:mb-16 border-l-4 border-rose-500 pl-4 md:pl-6">
+                <h2 className="text-3xl md:text-5xl font-serif italic text-white uppercase tracking-tighter">Top {cat.name}</h2>
+                <span className="text-rose-500 font-black text-[8px] md:text-[10px] tracking-widest uppercase opacity-60">Handpicked Excellence</span>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 md:gap-12">
                 {topList.map((vendor) => (
-                  <div key={vendor.id} className="group relative bg-slate-900/40 backdrop-blur-md rounded-[2.5rem] overflow-hidden border border-white/5 hover:border-rose-500/30 transition-all duration-700 shadow-3xl">
-                    <div className="h-80 w-full overflow-hidden bg-black relative">
+                  <div key={vendor.id} className="group relative bg-slate-900/40 backdrop-blur-md rounded-[2rem] md:rounded-[2.5rem] overflow-hidden border border-white/5 hover:border-rose-500/30 transition-all duration-700 shadow-3xl">
+                    <div className="h-64 md:h-80 w-full overflow-hidden bg-black relative">
                       <img src={vendor.imageUrl || cat.image} className="h-full w-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-1000 group-hover:scale-110" alt={vendor.businessName} />
-                      <div className="absolute top-6 left-6 bg-white/10 backdrop-blur-md border border-white/20 text-white text-[8px] font-black px-4 py-2 rounded-full uppercase tracking-widest">⭐ PREMIUM VENDOR</div>
+                      <div className="absolute top-4 left-4 md:top-6 md:left-6 bg-white/10 backdrop-blur-md border border-white/20 text-white text-[7px] md:text-[8px] font-black px-3 py-1.5 md:px-4 md:py-2 rounded-full uppercase tracking-widest">⭐ PREMIUM</div>
                     </div>
-                    <div className="p-10">
-                      <h4 className="text-white text-3xl font-serif italic group-hover:text-rose-400 transition-colors uppercase leading-none mb-4">{vendor.businessName}</h4>
-                      <div className="flex items-center gap-3 mb-8">
+                    <div className="p-6 md:p-10">
+                      <h4 className="text-white text-2xl md:text-3xl font-serif italic group-hover:text-rose-400 transition-colors uppercase leading-none mb-4">{vendor.businessName}</h4>
+                      <div className="flex items-center gap-2 mb-6 md:mb-8">
                         <span className="text-rose-500 text-xs">📍</span>
-                        <p className="text-gray-400 text-[11px] uppercase tracking-[0.2em] font-bold">{vendor.district} , Sri Lanka</p>
+                        <p className="text-gray-400 text-[10px] uppercase tracking-[0.1em] font-bold">{vendor.district}</p>
                       </div>
                       <Link href={`/vendor/${vendor.id}`}>
-                        <button className="w-full py-5 bg-gradient-to-r from-rose-600 to-rose-700 text-white text-[10px] font-black uppercase tracking-[0.4em] rounded-2xl hover:from-rose-500 hover:to-rose-600 transition-all shadow-xl flex items-center justify-center gap-2">
+                        <button className="w-full py-4 md:py-5 bg-gradient-to-r from-rose-600 to-rose-700 text-white text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] rounded-xl md:rounded-2xl hover:from-rose-500 hover:to-rose-600 transition-all shadow-xl flex items-center justify-center gap-2">
                           View Portfolio <span className="text-lg">→</span>
                         </button>
                       </Link>
@@ -228,9 +233,9 @@ export default function Home() {
           );
         })}
 
-        <div className="mt-20 text-center pb-20">
+        <div className="mt-10 md:mt-20 text-center pb-20">
           <Link href="/admin">
-            <span className="text-gray-600 text-[9px] uppercase tracking-[0.4em] cursor-pointer hover:text-rose-500 transition-colors">Vendor Management Portal</span>
+            <span className="text-gray-600 text-[8px] md:text-[9px] uppercase tracking-[0.3em] md:tracking-[0.4em] cursor-pointer hover:text-rose-500 transition-colors">Vendor Management Portal</span>
           </Link>
         </div>
       </div>

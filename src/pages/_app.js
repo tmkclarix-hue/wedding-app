@@ -25,17 +25,26 @@ export default function App({ Component, pageProps }) {
 
   return (
     <LanguageContext.Provider value={{ lang, setLang: handleLangChange, t }}>
-      {/* කළු පසුබිම මුළු සයිට් එකටම ලැබෙන්න මෙතනින් හැදුවා */}
-      <div className="bg-slate-950 min-h-screen selection:bg-rose-500 selection:text-white">
+      {/* bg-slate-950: මුළු සයිට් එකේම පසුබිම කළු පාටට තියාගන්නවා.
+        min-h-screen: content එක අඩු වුණත් screen එක සම්පූර්ණයෙන් කළු පාටට තියාගන්නවා.
+      */}
+      <div className="bg-slate-950 min-h-screen selection:bg-rose-500/40 selection:text-rose-200 antialiased overflow-x-hidden">
         
         {/* Navbar එක හැම page එකකම පේන්න මෙතනට දැම්මා */}
         <Navbar /> 
         
-        {/* Content එක Navbar එකට යට නොවෙන්න padding-top (pt-24) එකක් දුන්නා */}
-        <main className="pt-20 md:pt-24">
-          <Component {...pageProps} />
+        {/* Main Content Area:
+          pt-20: Mobile වලදී Navbar එකට පල්ලෙයින් පටන් ගන්න.
+          md:pt-28: Laptop වලදී තව ටිකක් ඉඩ තියන්න.
+          px-4: Mobile වලදී දෙපැත්තෙන් අකුරු ඇල නොවී තියෙන්න පොඩි ඉඩක් (padding) තැබුවා.
+        */}
+        <main className="pt-20 md:pt-28 px-4 md:px-0 transition-all duration-300">
+          <div className="max-w-7xl mx-auto">
+             <Component {...pageProps} />
+          </div>
         </main>
 
+        {/* මෙතනට පසුව ඔයාට Footer එකක් එකතු කරන්න පුළුවන් */}
       </div>
     </LanguageContext.Provider>
   );
