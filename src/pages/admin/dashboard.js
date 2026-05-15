@@ -1,159 +1,153 @@
-import { useState, useEffect, useContext } from 'react';
+import React, { useEffect, useState } from 'react';
 import { db } from '../../lib/firebase';
-import { collection, query, updateDoc, doc, onSnapshot, orderBy } from 'firebase/firestore';
-import { LanguageContext } from '../_app';
+import { collection, query, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 
-export default function AdminDashboard() {
-  const { t } = useContext(LanguageContext);
-  const [vendors, setVendors] = useState([]);
-  const [loading, setLoading] = useState(true);
+export default function UltimateAdminDashboard() {
+    const [vendors, setVendors] = useState([]);
+    const [bookings, setBookings] = useState([]);
+    const [activeTab, setActiveTab] = useState('vendors');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // දත්ත Real-time ලබාගැනීම
-    const q = query(
-      collection(db, "pending_vendors"), 
-      orderBy("createdAt", "desc")
-    );
-    
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const data = querySnapshot.docs.map(doc => ({ 
-        id: doc.id, 
-        ...doc.data() 
-      }));
-      setVendors(data);
-      setLoading(false);
-    }, (error) => {
-      console.error("Error fetching vendors:", error);
-      setLoading(false);
-    });
+    useEffect(() => {
+        // Vendors ලබාගැනීම
+        const vQuery = query(collection(db, "pending_vendors"));
+        const unsubV = onSnapshot(vQuery, (snap) => {
+            setVendors(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+            setLoading(false);
+        });
 
-    return () => unsubscribe();
-  }, []);
+        // Bookings ලබාගැනීම
+        const bQuery = query(collection(db, "bookings"));
+        const unsubB = onSnapshot(bQuery, (snap) => {
+            setBookings(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        });
 
-  // Status එක 'approved' කිරීම
-  const approveVendor = async (id) => {
-    if(!window.confirm("මෙම ව්‍යාපාරය Approve කිරීමට ඔබට විශ්වාසද?")) return;
-    try {
-      const docRef = doc(db, "pending_vendors", id);
-      await updateDoc(docRef, { status: 'approved' });
-      alert("Vendor Approved Successfully!");
-    } catch (error) {
-      alert("Error: " + error.message);
-    }
-  }
+        return () => { unsubV(); unsubB(); };
+    }, []);
 
-  // Top Vendor Toggle Logic
-  const toggleTopVendor = async (id, currentStatus) => {
-    try {
-      const docRef = doc(db, "pending_vendors", id);
-      await updateDoc(docRef, { isTop: !currentStatus });
-    } catch (error) {
-      alert("Error: " + error.message);
-    }
-  };
+    // --- Actions ---
+    const handleApprove = async (id) => {
+        await updateDoc(doc(db, "pending_vendors", id), { status: 'approved' });
+        alert("Vendor Verified! ✅");
+    };
 
-  return (
-    <div className="min-h-screen bg-slate-950 text-white p-6 md:p-12 font-sans selection:bg-rose-500">
-      <div className="max-w-7xl mx-auto">
-        
-        {/* Header */}
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 gap-6">
-          <div>
-            <h1 className="text-5xl font-serif italic text-white mb-2 leading-none">
-              Control <span className="text-rose-500">Center</span>
-            </h1>
-            <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.5em]">
-              Directory Management & Verification
-            </p>
-          </div>
-          <div className="flex gap-4">
-            <div className="bg-white/5 border border-white/10 px-8 py-4 rounded-[2rem] text-center">
-              <span className="block text-2xl font-black text-rose-500 leading-none">{vendors.length}</span>
-              <span className="text-[9px] text-gray-500 uppercase tracking-widest font-bold">Total Vendors</span>
+    const toggleTopList = async (id, currentStatus) => {
+        await updateDoc(doc(db, "pending_vendors", id), { isTopList: !currentStatus });
+    };
+
+    return (
+        <div className="min-h-screen bg-[#020617] text-slate-300 flex font-sans uppercase tracking-tighter">
+            
+            {/* --- SIDEBAR --- */}
+            <div className="w-80 bg-[#0a0f18] border-r border-white/5 flex flex-col sticky top-0 h-screen z-50">
+                <div className="p-10 mb-6">
+                    <h2 className="text-xl font-black text-white italic tracking-tighter uppercase">Wedding<span className="text-rose-600">Admin</span></h2>
+                </div>
+
+                <nav className="flex-1 px-6 space-y-4">
+                    <button onClick={() => setActiveTab('vendors')} className={`w-full text-left p-5 rounded-3xl text-[10px] font-black transition-all ${activeTab === 'vendors' ? 'bg-rose-600 text-white shadow-xl shadow-rose-900/40' : 'text-slate-500 hover:bg-white/5'}`}>
+                        🏢 VENDOR DIRECTORY
+                    </button>
+                    <button onClick={() => setActiveTab('bookings')} className={`w-full text-left p-5 rounded-3xl text-[10px] font-black transition-all ${activeTab === 'bookings' ? 'bg-blue-600 text-white shadow-xl shadow-blue-900/40' : 'text-slate-500 hover:bg-white/5'}`}>
+                        📅 BOOKING CALENDAR
+                    </button>
+                    <button onClick={() => setActiveTab('toplist')} className={`w-full text-left p-5 rounded-3xl text-[10px] font-black transition-all ${activeTab === 'toplist' ? 'bg-amber-500 text-white shadow-xl shadow-amber-900/40' : 'text-slate-500 hover:bg-white/5'}`}>
+                        🏆 PREMIUM PARTNERS
+                    </button>
+                </nav>
             </div>
-          </div>
-        </header>
 
-        {loading ? (
-          <div className="flex flex-col justify-center items-center py-40">
-            <div className="w-12 h-12 border-2 border-rose-500/20 border-t-rose-500 rounded-full animate-spin"></div>
-            <p className="mt-4 text-[10px] font-black uppercase tracking-widest text-gray-600">Accessing Database</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {vendors.length === 0 ? (
-              <div className="col-span-full py-40 text-center opacity-20">
-                <span className="text-6xl block mb-4">📂</span>
-                <p className="uppercase tracking-[1em] text-xs font-black">No Records Found</p>
-              </div>
-            ) : (
-              vendors.map((vendor) => (
-                <div key={vendor.id} className={`relative group bg-white/[0.02] border ${vendor.isTop ? 'border-amber-500/30' : 'border-white/5'} p-8 rounded-[3rem] transition-all duration-500 hover:bg-white/[0.04]`}>
-                  
-                  {/* Status Badges */}
-                  <div className="flex justify-between items-start mb-6">
-                    <div className="flex flex-col gap-2">
-                        <span className="text-[9px] font-black px-4 py-1.5 bg-rose-600 rounded-full uppercase tracking-widest w-fit">
-                            {vendor.category}
-                        </span>
-                        <span className={`text-[9px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest w-fit border ${vendor.status === 'approved' ? 'border-emerald-500 text-emerald-500 bg-emerald-500/10' : 'border-amber-500 text-amber-500 bg-amber-400/10'}`}>
-                            {vendor.status}
-                        </span>
-                    </div>
-                    {vendor.isTop && (
-                        <div className="bg-amber-500 p-2 rounded-full shadow-lg shadow-amber-500/20">
-                            <span className="text-xs">⭐</span>
+            {/* --- MAIN --- */}
+            <div className="flex-1 flex flex-col min-w-0">
+                <header className="h-28 px-12 flex items-center justify-between border-b border-white/5 bg-[#020617]/80 backdrop-blur-xl sticky top-0 z-40">
+                    <h1 className="text-2xl font-black italic text-white uppercase tracking-tighter">
+                        {activeTab === 'vendors' && "Directory Control"}
+                        {activeTab === 'bookings' && "Live Booking Calendar"}
+                        {activeTab === 'toplist' && "Premium Top List"}
+                    </h1>
+                </header>
+
+                <main className="p-12 overflow-y-auto">
+                    
+                    {/* --- VENDORS SECTION --- */}
+                    {activeTab === 'vendors' && (
+                        <div className="grid gap-6">
+                            {vendors.map(v => (
+                                <div key={v.id} className="bg-[#0a0f18] p-8 rounded-[3rem] border border-white/5 flex items-center justify-between group hover:border-rose-500/30 transition-all">
+                                    <div>
+                                        <h3 className="text-xl font-black text-white italic group-hover:text-rose-500">{v.businessName}</h3>
+                                        <p className="text-[10px] text-slate-500 mt-2 font-bold tracking-widest">{v.category} | {v.district}</p>
+                                    </div>
+                                    <div className="flex gap-4">
+                                        <button onClick={() => toggleTopList(v.id, v.isTopList)} className={`px-6 py-3 rounded-2xl text-[9px] font-black border ${v.isTopList ? 'bg-amber-600 text-white border-amber-400' : 'bg-white/5 text-slate-500'}`}>TOP LIST</button>
+                                        {v.status !== 'approved' && <button onClick={() => handleApprove(v.id)} className="bg-green-600 text-white px-6 py-3 rounded-2xl text-[9px] font-black uppercase">Verify</button>}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     )}
-                  </div>
 
-                  <h3 className="text-2xl font-serif italic text-white mb-2">{vendor.businessName}</h3>
-                  <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-6 italic">📍 {vendor.district}</p>
+                    {/* --- BOOKING CALENDAR SECTION --- */}
+                    {activeTab === 'bookings' && (
+                        <div className="space-y-10 animate-in fade-in duration-700">
+                            {/* Summary Cards */}
+                            <div className="grid grid-cols-3 gap-6">
+                                <div className="bg-blue-600/10 p-8 rounded-[2.5rem] border border-blue-600/20">
+                                    <p className="text-[9px] text-blue-400 font-black mb-2">UPCOMING BOOKINGS</p>
+                                    <h2 className="text-4xl font-black text-white italic">{bookings.length}</h2>
+                                </div>
+                            </div>
 
-                  <div className="space-y-3 mb-10">
-                    <div className="flex justify-between items-center text-xs p-3 bg-black/30 rounded-2xl border border-white/5">
-                        <span className="text-gray-500 font-bold uppercase tracking-tighter">Contact</span>
-                        <span className="text-emerald-400 font-mono font-bold tracking-widest">{vendor.phone}</span>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-3">
-                    {/* Approve Button */}
-                    {vendor.status !== 'approved' ? (
-                      <button 
-                        onClick={() => approveVendor(vendor.id)}
-                        className="w-full py-4 bg-white text-black rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-emerald-500 hover:text-white transition-all shadow-xl"
-                      >
-                        Approve Profile
-                      </button>
-                    ) : (
-                      <button 
-                        onClick={() => toggleTopVendor(vendor.id, vendor.isTop)}
-                        className={`w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all border ${
-                          vendor.isTop 
-                          ? 'bg-amber-500/10 border-amber-500/50 text-amber-500 hover:bg-amber-500 hover:text-black' 
-                          : 'border-white/10 text-gray-500 hover:border-amber-500 hover:text-amber-500'
-                        }`}
-                      >
-                        {vendor.isTop ? 'Remove from Top' : 'Promote to Top'}
-                      </button>
+                            {/* Booking List with Details */}
+                            <div className="bg-[#0a0f18] rounded-[3.5rem] border border-white/5 overflow-hidden shadow-2xl">
+                                <div className="p-8 border-b border-white/5 bg-white/[0.01]">
+                                    <h2 className="text-sm font-black text-white tracking-widest">MASTER BOOKING SCHEDULE</h2>
+                                </div>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left">
+                                        <thead className="bg-white/5 text-[9px] text-slate-500 border-b border-white/5">
+                                            <tr>
+                                                <th className="p-8">DATE & EVENT</th>
+                                                <th className="p-8">CLIENT DETAILS</th>
+                                                <th className="p-8">BOOKED FOR (VENDOR)</th>
+                                                <th className="p-8 text-right">STATUS</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-white/5">
+                                            {bookings.map(b => (
+                                                <tr key={b.id} className="hover:bg-blue-600/[0.03] transition-all">
+                                                    <td className="p-8">
+                                                        <div className="bg-blue-600/20 text-blue-400 w-fit px-3 py-1 rounded-lg text-[10px] font-black mb-2 border border-blue-600/20">
+                                                            📅 {b.bookingDate}
+                                                        </div>
+                                                        <p className="text-white font-bold text-sm tracking-normal">{b.eventDetails || 'Wedding Event'}</p>
+                                                    </td>
+                                                    <td className="p-8">
+                                                        <p className="text-white font-black text-xs uppercase tracking-tight">{b.customerName}</p>
+                                                        <p className="text-[10px] text-slate-500 mt-1 font-bold">📞 {b.customerPhone}</p>
+                                                    </td>
+                                                    <td className="p-8">
+                                                        <p className="text-[10px] text-rose-500 font-black uppercase tracking-widest">Store/Hotel:</p>
+                                                        <p className="text-white font-bold text-sm mt-1">{b.vendorName}</p>
+                                                    </td>
+                                                    <td className="p-8 text-right">
+                                                        <span className="bg-green-500/10 text-green-500 px-4 py-2 rounded-full text-[8px] font-black border border-green-500/20">CONFIRMED</span>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {bookings.length === 0 && (
+                                                <tr><td colSpan="4" className="p-32 text-center text-[10px] font-black text-slate-600 tracking-[0.5em]">No Bookings Recorded Yet</td></tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
                     )}
-                    
-                    {/* External Link to Portfolio */}
-                    <a 
-                      href={`/vendor/${vendor.id}`} 
-                      target="_blank" 
-                      className="text-center text-[9px] text-gray-600 font-black uppercase tracking-[0.3em] mt-2 hover:text-white transition-colors"
-                    >
-                      View Live Portfolio ↗
-                    </a>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
+
+                </main>
+            </div>
+        </div>
+    );
 }
