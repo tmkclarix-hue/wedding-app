@@ -49,9 +49,7 @@ const CategoryCard = ({ cat }) => {
 
   return (
     <Link href={`/category/${cat.name.toLowerCase()}`}>
-      {/* h-[400px] md:h-[550px] - පෝන් එකේදී උස අඩු කළා */}
       <div className="relative h-[400px] md:h-[550px] group cursor-pointer overflow-hidden rounded-[2.5rem] md:rounded-[3.5rem] border border-white/10 transition-all duration-1000 hover:border-rose-500 shadow-3xl bg-slate-900">
-        
         <div className="absolute inset-0 w-full h-full">
           {mediaList.images.length > 0 ? (
             mediaList.images.map((img, i) => (
@@ -78,19 +76,15 @@ const CategoryCard = ({ cat }) => {
         )}
 
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
-        
         <div className="absolute inset-0 p-8 md:p-12 flex flex-col justify-end items-center text-center">
            <div className="mb-4 md:mb-6 flex gap-2">
              {[...Array(3)].map((_, i) => (
                <span key={i} className={`h-1 rounded-full transition-all duration-700 ${Math.floor(imgIndex/10) === i ? 'bg-rose-500 w-10 md:w-12' : 'bg-white/20 w-4 md:w-6'}`}></span>
              ))}
            </div>
-           
-           {/* text-4xl md:text-7xl - අකුරු Responsive කළා */}
            <h3 className="text-white font-black uppercase tracking-tighter text-4xl md:text-7xl mb-4 transform group-hover:-translate-y-2 transition-transform duration-500 drop-shadow-2xl">
             {cat.name}
            </h3>
-           
            <p className="text-rose-500 font-bold text-[8px] md:text-[10px] tracking-[0.4em] md:tracking-[0.5em] uppercase opacity-100 md:opacity-0 group-hover:opacity-100 transition-all duration-500">
              Explore Collection
            </p>
@@ -131,6 +125,13 @@ export default function Home() {
     { id: 5, name: 'Salon', icon: '💇‍♀️', image: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?q=80' }
   ];
 
+  const events = [
+    { name: 'Elegant Weddings', image: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?q=80', desc: 'Crafting your forever story.' },
+    { name: 'Birthday Bash', image: 'https://images.unsplash.com/photo-1530103043960-ef38714abb15?q=80', desc: 'Epic parties for all ages.' },
+    { name: 'Corporate Events', image: 'https://images.unsplash.com/photo-1511578314322-379afb476865?q=80', desc: 'Success in every detail.' },
+    { name: 'Anniversaries', image: 'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?q=80', desc: 'Reliving your magic.' },
+  ];
+
   const districts = ["Colombo", "Gampaha", "Kandy", "Galle", "Matara", "Kalutara", "Kurunegala", "Anuradhapura"];
 
   const getFilteredVendors = (catName) => {
@@ -168,7 +169,6 @@ export default function Home() {
             {t.heroTitle || 'Your Dream Wedding Starts Here'}
           </h1>
           
-          {/* Search Box Responsive Layout */}
           <div className="flex flex-col md:flex-row gap-2 md:gap-0 p-2 bg-white/10 backdrop-blur-md rounded-2xl md:rounded-full border border-white/20 shadow-2xl overflow-hidden max-w-4xl mx-auto">
             <input 
                 type="text" 
@@ -196,7 +196,37 @@ export default function Home() {
           ))}
         </div>
 
-        {/* --- Featured Section --- */}
+        {/* --- EVENT ORGANIZING VIDEO BAR --- */}
+        <div className="relative w-full h-[400px] md:h-[600px] mb-24 md:mb-40 overflow-hidden flex items-center justify-center rounded-[3rem] md:rounded-[5rem]">
+          <video autoPlay muted loop playsInline className="absolute inset-0 w-full h-full object-cover brightness-[0.3]">
+            <source src="https://assets.mixkit.co/videos/preview/mixkit-fireworks-illuminating-the-night-sky-4152-large.mp4" type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950"></div>
+          <div className="relative z-10 text-center px-6">
+             <span className="text-rose-500 font-black text-[10px] md:text-xs tracking-[0.6em] uppercase mb-4 block">Event Management</span>
+             <h2 className="text-4xl md:text-8xl font-serif italic text-white drop-shadow-2xl">Exquisite <span className="text-rose-600">Events</span></h2>
+             <p className="text-gray-400 text-[9px] md:text-xs uppercase tracking-[0.4em] mt-6">Birthdays • Corporate • Anniversaries</p>
+          </div>
+        </div>
+
+        {/* --- EVENT ORGANIZING CARDS --- */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-10 max-w-[1600px] mx-auto mb-40">
+          {events.map((event, index) => (
+            <div key={index} className="group relative h-[500px] md:h-[650px] rounded-[3rem] overflow-hidden border border-white/5 bg-slate-900/40 hover:border-rose-500/30 transition-all duration-700 shadow-3xl">
+              <div className="absolute inset-0">
+                <img src={event.image} className="w-full h-full object-cover opacity-30 group-hover:opacity-100 group-hover:scale-110 transition-all duration-1000" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
+              </div>
+              <div className="absolute inset-0 p-8 md:p-12 flex flex-col justify-end">
+                <h3 className="text-3xl md:text-4xl font-serif italic text-white mb-2">{event.name}</h3>
+                <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-8 opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500">{event.desc}</p>
+                <button className="w-full bg-white/5 backdrop-blur-2xl border border-white/10 py-4 md:py-5 rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-rose-600 hover:border-rose-600 transition-all">Book Service</button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* --- Featured Vendors Sections --- */}
         {categories.map((cat) => {
           const topList = getFilteredVendors(cat.name);
           if (topList.length === 0) return null;
@@ -206,7 +236,6 @@ export default function Home() {
                 <h2 className="text-3xl md:text-5xl font-serif italic text-white uppercase tracking-tighter">Top {cat.name}</h2>
                 <span className="text-rose-500 font-black text-[8px] md:text-[10px] tracking-widest uppercase opacity-60">Handpicked Excellence</span>
               </div>
-              
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 md:gap-12">
                 {topList.map((vendor) => (
                   <div key={vendor.id} className="group relative bg-slate-900/40 backdrop-blur-md rounded-[2rem] md:rounded-[2.5rem] overflow-hidden border border-white/5 hover:border-rose-500/30 transition-all duration-700 shadow-3xl">
